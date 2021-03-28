@@ -28,7 +28,7 @@ steps:
         path: /var/run/docker.sock
     when:
       branch:
-        - master
+        - main
       event:
         - push
   - name: run
