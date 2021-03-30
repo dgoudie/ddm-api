@@ -3,6 +3,7 @@ import { BeerOrLiquorBrand, MixedDrinkRecipe } from '@stan/ddm-types';
 
 import { properties } from 'resources/properties';
 import { isDefinedAndNotNull } from 'utils/defined-null';
+import { getLogger } from 'log4js';
 
 let mongoClient: MongoClient;
 let beerOrLiquorBrandsCollection: Collection<BeerOrLiquorBrand>;
@@ -14,7 +15,11 @@ export async function init() {
     useUnifiedTopology: true,
     serverSelectionTimeoutMS: 5000,
   });
-  mongoClient.connect();
+  try {
+    await mongoClient.connect();
+  } catch (e) {
+    getLogger().error(`Error connecting to database: ${(<Error>e).message}`);
+  }
   beerOrLiquorBrandsCollection = mongoClient
     .db(properties.mongodbDbName)
     .collection<BeerOrLiquorBrand>(

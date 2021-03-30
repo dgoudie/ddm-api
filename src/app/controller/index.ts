@@ -3,6 +3,7 @@ import express from 'express';
 import { getLogger } from 'log4js';
 import { init as initController } from 'controller/controller';
 import { properties } from 'resources/properties';
+import { validateToken } from 'services/token-service';
 
 export function init() {
   getLogger().info(`initializing controller...`);
@@ -16,6 +17,18 @@ export function init() {
 }
 function setupPreRequestMiddleware(app: express.Application) {
   app.use(cors());
+  app.use('*/secure*', (req, res, next) => {
+    const token = req.header('authorization');
+    try {
+      const newToken = validateToken(token);
+      if (newToken) {
+        res.setHeader('x-new-token', newToken);
+      }
+      next();
+    } catch (e) {
+      res.sendStatus(403);
+    }
+  });
   app.use((req, res, next) => {
     if (!req.url.match(/^\/docs\/?/)) {
       getLogger().info(`Received request to ${req.url}`);
