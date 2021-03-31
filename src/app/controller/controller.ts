@@ -7,35 +7,42 @@ import {
 import express from 'express';
 
 export function init(app: express.Application) {
-  app.get('/api/beers-and-liquors', (req, res, next) =>
+  app.get('/api/beers-and-liquors', (req, res) =>
     getBeerOrLiquorBrands()
       .then((items) => res.send(items))
       .catch((e) => res.status(500).send(e))
   );
-  app.get('/api/mixed-drinks', (req, res, next) =>
+  app.get('/api/mixed-drinks', (req, res) =>
     getMixedDrinkRecipesWithIngredients()
       .then((items) => res.send(items))
       .catch((e) => res.status(500).send(e))
   );
-  app.get(
-    '/api/secure/beers-and-liquors/:id/mark-in-stock',
-    (req, res, next) => {
-      res.sendStatus(200);
-    }
-  );
-  app.get('/api/login', (req, res, next) => {
+  app.get('/api/secure/beers-and-liquors/:id/mark-in-stock', (req, res) => {
+    res.sendStatus(200);
+  });
+  app.get('/api/login', (req, res) => {
     try {
-      const token = generateTokenFromPassword(req.header('x-pw'));
-      res.send(token);
+      const { token, expires } = generateTokenFromPassword(req.header('x-pw'));
+      res.cookie('AUTH_TOKEN', token, {
+        httpOnly: true,
+        expires: new Date(expires),
+      });
+      res.sendStatus(200);
     } catch (e) {
       res.sendStatus(422);
     }
   });
-  app.get('/api/verify-token', (req, res, next) => {
-    const isValid = verifyToken(req.header('authorization'));
+  app.get('/api/logout', (req, res) => {
+    res.clearCookie('AUTH_TOKEN');
+    res.sendStatus(200);
+  });
+  app.get('/api/verify-token', (req, res) => {
+    const token = req.cookies['AUTH_TOKEN'];
+    const isValid = verifyToken(token);
     if (isValid) {
       res.sendStatus(200);
     } else {
+      res.clearCookie('AUTH_TOKEN');
       res.sendStatus(401);
     }
   });

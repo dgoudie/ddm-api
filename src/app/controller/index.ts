@@ -1,9 +1,14 @@
+import {
+  generateNewTokenIfNecessary,
+  verifyToken,
+} from 'services/token-service';
+
+import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import express from 'express';
 import { getLogger } from 'log4js';
 import { init as initController } from 'controller/controller';
 import { properties } from 'resources/properties';
-import { validateAndGenerateNewTokenIfNecessary } from 'services/token-service';
 
 export function init() {
   getLogger().info(`initializing controller...`);
@@ -17,17 +22,26 @@ export function init() {
 }
 function setupPreRequestMiddleware(app: express.Application) {
   app.use(cors());
+  app.use(cookieParser());
   app.use('*/secure*', (req, res, next) => {
-    const token = req.header('authorization');
-    try {
-      const newToken = validateAndGenerateNewTokenIfNecessary(token);
-      if (newToken) {
-        res.setHeader('x-new-token', newToken);
-      }
+    const token = req.cookies['AUTH_TOKEN'];
+    const valid = verifyToken(token);
+    if (valid) {
       next();
-    } catch (e) {
+    } else {
       res.sendStatus(403);
     }
+  });
+  app.use((req, res, next) => {
+    const token = req.cookies['AUTH_TOKEN'];
+    const newTokenWithExpiration = generateNewTokenIfNecessary(token);
+    if (newTokenWithExpiration) {
+      res.cookie('AUTH_TOKEN', newTokenWithExpiration.token, {
+        httpOnly: true,
+        expires: new Date(newTokenWithExpiration.expires),
+      });
+    }
+    next();
   });
   app.use((req, res, next) => {
     if (!req.url.match(/^\/docs\/?/)) {

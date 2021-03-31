@@ -7,8 +7,6 @@ import {
   getMixedDrinkRecipes as getMixedDrinkRecipesFromRepository,
 } from 'repository/ddm.repository';
 
-import jwt from 'jsonwebtoken';
-
 export async function getBeerOrLiquorBrands(filterText?: string) {
   try {
     return getBeerOrLiquorBrandsFromRepository(filterText);

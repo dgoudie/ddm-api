@@ -1,19 +1,18 @@
-import {
-  addMinutes,
-  addMonths,
-  addSeconds,
-  compareAsc,
-  compareDesc,
-  isAfter,
-} from 'date-fns';
+import { addMinutes, addMonths, isAfter } from 'date-fns';
 
 import { getLogger } from 'log4js';
 import jwt from 'jsonwebtoken';
 
 const JWT_SECRET_WITH_PASSWORD = `${process.env.JWT_SECRET}_${process.env.LOGIN_PASSWORD}`;
 
+type JWTPayload = {
+  iat: number;
+  exp: number;
+};
+
 export const generateTokenFromPassword = (password: string) => {
-  if (password !== process.env.LOGIN_PASSWORD) {
+  const decodedPassword = Buffer.from(password, 'base64').toString();
+  if (decodedPassword !== process.env.LOGIN_PASSWORD) {
     getLogger().warn('Invalid Password');
     throw new Error('Invalid Password');
   }
@@ -29,19 +28,29 @@ export const verifyToken = (token: string): boolean => {
   return true;
 };
 
-export const validateAndGenerateNewTokenIfNecessary = (
-  token: string
-): string | null => {
-  if (!token) {
-    throw new Error();
+export const generateNewTokenIfNecessary = (
+  validatedToken: string
+): { token: string; expires: number } | null => {
+  if (!validatedToken) {
+    return null;
   }
-  //@ts-ignore
-  const { iat, exp } = jwt.verify(token, JWT_SECRET_WITH_PASSWORD);
+  let jsonPayload: JWTPayload;
+  try {
+    const payload = jwt.decode(validatedToken);
+    if (typeof payload === 'string') {
+      jsonPayload = JSON.parse(validatedToken);
+    } else {
+      jsonPayload = payload as JWTPayload;
+    }
+  } catch (e) {
+    return null;
+  }
+  const { iat, exp } = jsonPayload;
   const expired = isAfter(new Date(), exp);
-  if (!!expired) {
-    throw new Error();
+  if (expired) {
+    return null;
   }
-  const issuedTimePlus5Minutes = addSeconds(iat, 5);
+  const issuedTimePlus5Minutes = addMinutes(iat, 5);
   const shouldIssueNewToken = isAfter(new Date(), issuedTimePlus5Minutes);
   if (shouldIssueNewToken) {
     return generateToken();
@@ -49,12 +58,13 @@ export const validateAndGenerateNewTokenIfNecessary = (
   return null;
 };
 
-const generateToken = () => {
+const generateToken = (): { token: string; expires: number } => {
   const iat = Date.now();
   const oneMonthFromNow = addMonths(iat, 1);
-  const payload = {
-    iat: Date.now(),
-    exp: oneMonthFromNow.getTime(),
+  const exp = oneMonthFromNow.getTime();
+  const payload: JWTPayload = {
+    iat,
+    exp,
   };
-  return jwt.sign(payload, JWT_SECRET_WITH_PASSWORD);
+  return { token: jwt.sign(payload, JWT_SECRET_WITH_PASSWORD), expires: exp };
 };
