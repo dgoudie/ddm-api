@@ -40,7 +40,7 @@ export function getBeerOrLiquorBrands(filterText?: string, inStock?: boolean) {
   if (isDefinedAndNotNull(filterText)) {
     query = { ...query, ...buildQueryForText(filterText) };
   }
-  return beerOrLiquorBrandsCollection.find(query).toArray();
+  return beerOrLiquorBrandsCollection.find(query).sort({ name: 1 }).toArray();
 }
 
 export function getMixedDrinkRecipes(filterText?: string) {
@@ -48,7 +48,7 @@ export function getMixedDrinkRecipes(filterText?: string) {
   if (isDefinedAndNotNull(filterText)) {
     query = { ...query, ...buildQueryForText(filterText) };
   }
-  return mixedDrinkRecipesCollection.find(query).toArray();
+  return mixedDrinkRecipesCollection.find(query).sort({ name: 1 }).toArray();
 }
 
 const buildQueryForText = (text: string) => {

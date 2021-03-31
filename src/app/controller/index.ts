@@ -3,7 +3,7 @@ import express from 'express';
 import { getLogger } from 'log4js';
 import { init as initController } from 'controller/controller';
 import { properties } from 'resources/properties';
-import { validateToken } from 'services/token-service';
+import { validateAndGenerateNewTokenIfNecessary } from 'services/token-service';
 
 export function init() {
   getLogger().info(`initializing controller...`);
@@ -20,7 +20,7 @@ function setupPreRequestMiddleware(app: express.Application) {
   app.use('*/secure*', (req, res, next) => {
     const token = req.header('authorization');
     try {
-      const newToken = validateToken(token);
+      const newToken = validateAndGenerateNewTokenIfNecessary(token);
       if (newToken) {
         res.setHeader('x-new-token', newToken);
       }

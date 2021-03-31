@@ -1,10 +1,10 @@
+import { generateTokenFromPassword, verifyToken } from 'services/token-service';
 import {
   getBeerOrLiquorBrands,
   getMixedDrinkRecipesWithIngredients,
 } from 'services/service';
 
 import express from 'express';
-import { generateTokenFromPassword } from 'services/token-service';
 
 export function init(app: express.Application) {
   app.get('/api/beers-and-liquors', (req, res, next) =>
@@ -23,12 +23,20 @@ export function init(app: express.Application) {
       res.sendStatus(200);
     }
   );
-  app.get('/api/token', (req, res, next) => {
+  app.get('/api/login', (req, res, next) => {
     try {
       const token = generateTokenFromPassword(req.header('x-pw'));
       res.send(token);
     } catch (e) {
       res.sendStatus(422);
+    }
+  });
+  app.get('/api/verify-token', (req, res, next) => {
+    const isValid = verifyToken(req.header('authorization'));
+    if (isValid) {
+      res.sendStatus(200);
+    } else {
+      res.sendStatus(401);
     }
   });
 }
