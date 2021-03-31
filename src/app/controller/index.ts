@@ -1,3 +1,4 @@
+import express, { CookieOptions } from 'express';
 import {
   generateNewTokenIfNecessary,
   verifyToken,
@@ -5,13 +6,23 @@ import {
 
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
-import express from 'express';
 import { getLogger } from 'log4js';
 import { init as initController } from 'controller/controller';
 import { properties } from 'resources/properties';
 
+export const AUTH_TOKEN = 'AUTH_TOKEN';
+
+export const cookieOptions: CookieOptions = {
+  httpOnly: true,
+  sameSite: 'none',
+  secure: true,
+};
+
 export function init() {
   getLogger().info(`initializing controller...`);
+  if (!process.env.JWT_SECRET) {
+    getLogger().error(`environment variable USER_INTERFACE_PATH not found.`);
+  }
   const app = express();
   setupPreRequestMiddleware(app);
   setupHealthCheck(app);
@@ -21,10 +32,10 @@ export function init() {
   );
 }
 function setupPreRequestMiddleware(app: express.Application) {
-  app.use(cors());
+  app.use(cors({ credentials: true, origin: process.env.USER_INTERFACE_PATH }));
   app.use(cookieParser());
   app.use('*/secure*', (req, res, next) => {
-    const token = req.cookies['AUTH_TOKEN'];
+    const token = req.cookies[AUTH_TOKEN];
     const valid = verifyToken(token);
     if (valid) {
       next();
@@ -33,11 +44,11 @@ function setupPreRequestMiddleware(app: express.Application) {
     }
   });
   app.use((req, res, next) => {
-    const token = req.cookies['AUTH_TOKEN'];
+    const token = req.cookies[AUTH_TOKEN];
     const newTokenWithExpiration = generateNewTokenIfNecessary(token);
     if (newTokenWithExpiration) {
-      res.cookie('AUTH_TOKEN', newTokenWithExpiration.token, {
-        httpOnly: true,
+      res.cookie(AUTH_TOKEN, newTokenWithExpiration.token, {
+        ...cookieOptions,
         expires: new Date(newTokenWithExpiration.expires),
       });
     }

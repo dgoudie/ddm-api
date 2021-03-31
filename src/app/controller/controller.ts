@@ -1,3 +1,4 @@
+import { AUTH_TOKEN, cookieOptions } from 'controller';
 import { generateTokenFromPassword, verifyToken } from 'services/token-service';
 import {
   getBeerOrLiquorBrands,
@@ -23,8 +24,8 @@ export function init(app: express.Application) {
   app.get('/api/login', (req, res) => {
     try {
       const { token, expires } = generateTokenFromPassword(req.header('x-pw'));
-      res.cookie('AUTH_TOKEN', token, {
-        httpOnly: true,
+      res.cookie(AUTH_TOKEN, token, {
+        ...cookieOptions,
         expires: new Date(expires),
       });
       res.sendStatus(200);
@@ -33,16 +34,16 @@ export function init(app: express.Application) {
     }
   });
   app.get('/api/logout', (req, res) => {
-    res.clearCookie('AUTH_TOKEN');
+    res.clearCookie(AUTH_TOKEN);
     res.sendStatus(200);
   });
   app.get('/api/verify-token', (req, res) => {
-    const token = req.cookies['AUTH_TOKEN'];
+    const token = req.cookies[AUTH_TOKEN];
     const isValid = verifyToken(token);
     if (isValid) {
       res.sendStatus(200);
     } else {
-      res.clearCookie('AUTH_TOKEN');
+      res.clearCookie(AUTH_TOKEN);
       res.sendStatus(401);
     }
   });
