@@ -57,6 +57,10 @@ steps:
         from_secret: DOMAIN
       MONGODB_CONNECTION_URL:
         from_secret: MONGODB_CONNECTION_URL
+      LOGIN_PASSWORD:
+        from_secret: LOGIN_PASSWORD
+      JWT_SECRET:
+        from_secret: JWT_SECRET
     volumes:
       - name: socket
         path: /var/run/docker.sock
