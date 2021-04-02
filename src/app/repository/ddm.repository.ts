@@ -1,4 +1,4 @@
-import { Collection, MongoClient } from 'mongodb';
+import { Collection, MongoClient, ObjectId } from 'mongodb';
 import { BeerOrLiquorBrand, MixedDrinkRecipe } from '@stan/ddm-types';
 
 import { properties } from 'resources/properties';
@@ -41,6 +41,14 @@ export function getBeerOrLiquorBrands(filterText?: string, inStock?: boolean) {
     query = { ...query, ...buildQueryForText(filterText) };
   }
   return beerOrLiquorBrandsCollection.find(query).sort({ name: 1 }).toArray();
+}
+
+export async function markBeerOrLiquorAsOutOfStock(_id: string) {
+  const oid: any = new ObjectId(_id);
+  await beerOrLiquorBrandsCollection.updateOne(
+    { _id: oid },
+    { $set: { inStock: false } }
+  );
 }
 
 export function getMixedDrinkRecipes(filterText?: string) {

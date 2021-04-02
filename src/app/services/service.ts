@@ -5,6 +5,7 @@ import {
 import {
   getBeerOrLiquorBrands as getBeerOrLiquorBrandsFromRepository,
   getMixedDrinkRecipes as getMixedDrinkRecipesFromRepository,
+  markBeerOrLiquorAsOutOfStock as markBeerOrLiquorAsOutOfStockInRepository,
 } from 'repository/ddm.repository';
 
 export async function getBeerOrLiquorBrands(filterText?: string) {
@@ -40,4 +41,8 @@ export async function getMixedDrinkRecipesWithIngredients(
   } catch (e) {
     throw new Error('Unable to query database.');
   }
+}
+
+export async function markBeerOrLiquorAsOutOfStock(id: string) {
+  await markBeerOrLiquorAsOutOfStockInRepository(id);
 }
