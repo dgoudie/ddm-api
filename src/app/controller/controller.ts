@@ -1,62 +1,50 @@
-import { AUTH_TOKEN, cookieOptions } from 'controller';
-import { generateTokenFromPassword, verifyToken } from 'services/token-service';
 import {
   getBeerOrLiquorBrands,
   getMixedDrinkRecipesWithIngredients,
-  markBeerOrLiquorAsOutOfStock,
+  markBeerOrLiquorAsInStock,
 } from 'services/service';
 
 import express from 'express';
-import { getLogger } from 'log4js';
+import { parseAndConvertAllParams } from 'utils/parse-query-param';
+import { ServiceError } from '@stan/service-error';
+import { ObjectId } from 'bson';
 
 export function init(app: express.Application) {
-  app.get('/api/beers-and-liquors', (req, res) =>
+  app.get('/api/beers-and-liquors', (req, res, next) =>
     getBeerOrLiquorBrands()
       .then((items) => res.send(items))
-      .catch((e) => res.status(500).send(e))
+      .catch((e) => next(e))
   );
-  app.get(
-    '/api/secure/beers-and-liquors/:id/mark-out-of-stock',
-    async (req, res) => {
-      const { id } = req.params;
-      try {
-        await markBeerOrLiquorAsOutOfStock(id);
-        res.sendStatus(204);
-      } catch (e) {
-        getLogger().error(e);
-        res.sendStatus(500);
+  app.post(
+    '/api/secure/beers-and-liquors/:id/mark-in-stock/:flag',
+    (req, res, next) => {
+      const { id, flag } = <{ id: string; flag: boolean }>(
+        parseAndConvertAllParams(req.params)
+      );
+      if (typeof flag !== 'boolean') {
+        next(
+          new ServiceError(
+            400,
+            `:flag parameter must be a boolean ('true' or 'false')`
+          )
+        );
+      } else {
+        let objectId: ObjectId;
+        try {
+          objectId = new ObjectId(id);
+        } catch (e) {
+          next(new ServiceError(400, 'Invalid parameter :id'));
+          return;
+        }
+        markBeerOrLiquorAsInStock(objectId, flag)
+          .then(() => res.sendStatus(204))
+          .catch(next);
       }
     }
   );
-  app.get('/api/mixed-drinks', (req, res) =>
+  app.get('/api/mixed-drinks', (req, res, next) =>
     getMixedDrinkRecipesWithIngredients()
       .then((items) => res.send(items))
-      .catch((e) => res.status(500).send(e))
+      .catch(next)
   );
-  app.get('/api/login', (req, res) => {
-    try {
-      const { token, expires } = generateTokenFromPassword(req.header('x-pw'));
-      res.cookie(AUTH_TOKEN, token, {
-        ...cookieOptions,
-        expires: new Date(expires),
-      });
-      res.sendStatus(200);
-    } catch (e) {
-      res.sendStatus(422);
-    }
-  });
-  app.get('/api/logout', (req, res) => {
-    res.clearCookie(AUTH_TOKEN);
-    res.sendStatus(200);
-  });
-  app.get('/api/verify-token', (req, res) => {
-    const token = req.cookies[AUTH_TOKEN];
-    const isValid = verifyToken(token);
-    if (isValid) {
-      res.sendStatus(200);
-    } else {
-      res.clearCookie(AUTH_TOKEN);
-      res.sendStatus(401);
-    }
-  });
 }

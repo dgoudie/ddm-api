@@ -5,8 +5,10 @@ import {
 import {
   getBeerOrLiquorBrands as getBeerOrLiquorBrandsFromRepository,
   getMixedDrinkRecipes as getMixedDrinkRecipesFromRepository,
-  markBeerOrLiquorAsOutOfStock as markBeerOrLiquorAsOutOfStockInRepository,
+  markBeerOrLiquorAsInStock as markBeerOrLiquorAsInStockInRepository,
 } from 'repository/ddm.repository';
+
+import { ObjectId } from 'bson';
 
 export async function getBeerOrLiquorBrands(filterText?: string) {
   try {
@@ -43,6 +45,6 @@ export async function getMixedDrinkRecipesWithIngredients(
   }
 }
 
-export async function markBeerOrLiquorAsOutOfStock(id: string) {
-  await markBeerOrLiquorAsOutOfStockInRepository(id);
+export function markBeerOrLiquorAsInStock(id: ObjectId, flag: boolean) {
+  return markBeerOrLiquorAsInStockInRepository(id, flag);
 }
