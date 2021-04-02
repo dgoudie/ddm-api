@@ -1,10 +1,10 @@
 import { Collection, MongoClient, ObjectId } from 'mongodb';
-import { BeerOrLiquorBrand, MixedDrinkRecipe } from '@stan/ddm-types';
+import { BeerOrLiquorBrand, MixedDrinkRecipe } from '@dgoudie/ddm-types';
 
 import { properties } from '../resources/properties';
 import { isDefinedAndNotNull } from '../utils/defined-null';
 import { getLogger } from 'log4js';
-import { ServiceError } from '@stan/service-error';
+import { ServiceError } from '@dgoudie/service-error';
 
 let mongoClient: MongoClient;
 let beerOrLiquorBrandsCollection: Collection<BeerOrLiquorBrand>;

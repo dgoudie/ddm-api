@@ -6,7 +6,7 @@ import {
 
 import express from 'express';
 import { parseAndConvertAllParams } from '../utils/parse-query-param';
-import { ServiceError } from '@stan/service-error';
+import { ServiceError } from '@dgoudie/service-error';
 import { ObjectId } from 'bson';
 
 export function init(app: express.Application) {

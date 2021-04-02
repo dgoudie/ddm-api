@@ -4,7 +4,7 @@ import {
   verifyToken,
 } from '../services/token-service';
 
-import { ServiceError } from '@stan/service-error';
+import { ServiceError } from '@dgoudie/service-error';
 import express from 'express';
 
 export function init(app: express.Application) {

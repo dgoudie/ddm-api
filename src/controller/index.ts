@@ -4,7 +4,7 @@ import {
   handleRemainingErrors,
   sendNotifications,
   translateServiceErrors,
-} from '@stan/service-error';
+} from '@dgoudie/service-error';
 import express, { CookieOptions } from 'express';
 import {
   generateNewTokenIfNecessary,

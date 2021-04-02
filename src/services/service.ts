@@ -1,7 +1,7 @@
 import {
   BeerOrLiquorBrand,
   MixedDrinkRecipeWithIngredients,
-} from '@stan/ddm-types';
+} from '@dgoudie/ddm-types';
 import {
   getBeerOrLiquorBrands as getBeerOrLiquorBrandsFromRepository,
   getMixedDrinkRecipes as getMixedDrinkRecipesFromRepository,
