@@ -6,7 +6,7 @@ import {
   getBeerOrLiquorBrands as getBeerOrLiquorBrandsFromRepository,
   getMixedDrinkRecipes as getMixedDrinkRecipesFromRepository,
   markBeerOrLiquorAsInStock as markBeerOrLiquorAsInStockInRepository,
-} from 'repository/ddm.repository';
+} from '../repository/ddm.repository';
 
 import { ObjectId } from 'bson';
 

@@ -1,5 +1,8 @@
-import { AUTH_TOKEN, cookieOptions } from 'controller';
-import { generateTokenFromPassword, verifyToken } from 'services/token-service';
+import { AUTH_TOKEN, cookieOptions } from '../controller';
+import {
+  generateTokenFromPassword,
+  verifyToken,
+} from '../services/token-service';
 
 import { ServiceError } from '@stan/service-error';
 import express from 'express';

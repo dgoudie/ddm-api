@@ -7,8 +7,8 @@
     "target": "es2018",
     "moduleResolution": "node",
     "sourceMap": true,
-    "outDir": "dist",
-    "baseUrl": "./src/app/",
+    "outDir": "build",
+    "rootDir": "src",
     "resolveJsonModule": true,
     "types": ["webrtc", "node"]
   },

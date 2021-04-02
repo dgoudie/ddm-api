@@ -9,15 +9,15 @@ import express, { CookieOptions } from 'express';
 import {
   generateNewTokenIfNecessary,
   verifyToken,
-} from 'services/token-service';
+} from '../services/token-service';
 
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import createMailgun from 'mailgun-js';
 import { getLogger } from 'log4js';
-import { init as initController } from 'controller/controller';
-import { init as initTokenController } from 'controller/token-controller';
-import { properties } from 'resources/properties';
+import { init as initController } from '../controller/controller';
+import { init as initTokenController } from '../controller/token-controller';
+import { properties } from '../resources/properties';
 
 export const AUTH_TOKEN = 'AUTH_TOKEN';
 

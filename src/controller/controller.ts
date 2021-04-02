@@ -2,10 +2,10 @@ import {
   getBeerOrLiquorBrands,
   getMixedDrinkRecipesWithIngredients,
   markBeerOrLiquorAsInStock,
-} from 'services/service';
+} from '../services/service';
 
 import express from 'express';
-import { parseAndConvertAllParams } from 'utils/parse-query-param';
+import { parseAndConvertAllParams } from '../utils/parse-query-param';
 import { ServiceError } from '@stan/service-error';
 import { ObjectId } from 'bson';
 

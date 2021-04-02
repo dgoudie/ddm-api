@@ -1,8 +1,8 @@
 import { Collection, MongoClient, ObjectId } from 'mongodb';
 import { BeerOrLiquorBrand, MixedDrinkRecipe } from '@stan/ddm-types';
 
-import { properties } from 'resources/properties';
-import { isDefinedAndNotNull } from 'utils/defined-null';
+import { properties } from '../resources/properties';
+import { isDefinedAndNotNull } from '../utils/defined-null';
 import { getLogger } from 'log4js';
 import { ServiceError } from '@stan/service-error';
 
