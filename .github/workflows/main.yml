@@ -1,21 +1,32 @@
-name: Publish Docker image
+name: ci
+
 on:
   push:
     branches:
       - 'main'
-      - 'master'
+
 jobs:
-  push_to_registry:
-    name: Push Docker image to GitHub Packages
+  docker:
     runs-on: ubuntu-latest
     steps:
-      - name: Check out the repo
+      -
+        name: Checkout
         uses: actions/checkout@v2
-      - name: Push to GitHub Packages
-        uses: docker/build-push-action@v1
+      -
+        name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+      - 
+        name: Login to DockerHub
+        uses: docker/login-action@v1 
         with:
-          username: ${{ github.actor }}
-          password: ${{ github.token }}
-          registry: docker.pkg.github.com
-          repository: dgoudie/ddm-api
-          tag_with_ref: true
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      -
+        name: Build and push
+        uses: docker/build-push-action@v2
+        with:
+          push: true
+          tags: dgoudie/ddm-api:latest
+      -
+        name: Image digest
+        run: echo ${{ steps.docker_build.outputs.digest }}
