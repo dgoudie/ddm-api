@@ -27,6 +27,3 @@ jobs:
         with:
           push: true
           tags: dgoudie/ddm-api:latest
-      -
-        name: Image digest
-        run: echo ${{ steps.docker_build.outputs.digest }}
