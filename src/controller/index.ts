@@ -13,7 +13,6 @@ import {
 
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
-import createMailgun from 'mailgun-js';
 import { getLogger } from 'log4js';
 import { init as initController } from '../controller/controller';
 import { init as initTokenController } from '../controller/token-controller';
@@ -29,7 +28,7 @@ export const cookieOptions: CookieOptions = {
 
 export function init() {
   getLogger().info(`initializing controllers...`);
-  if (!process.env.JWT_SECRET) {
+  if (!process.env.USER_INTERFACE_PATH) {
     getLogger().error(`environment variable USER_INTERFACE_PATH not found.`);
   }
   const app = express();
