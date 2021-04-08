@@ -29,7 +29,7 @@ jobs:
           tags: dgoudie/ddm-api:latest
       -
         name: Send Event to Watchtower
-        uses: joelwmale/webhook-action@master
+        uses: joelwmale/webhook-action@2.1.0
         with:
           url: ${{ secrets.WATCHTOWER_URL }}
           headers: '{"authorization": "${{ secrets.WATCHTOWER_AUTHORIZATION }}"}'
