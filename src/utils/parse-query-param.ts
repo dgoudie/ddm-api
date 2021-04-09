@@ -15,7 +15,7 @@ type DefaultParseAllParamsResponseType = {
 export const parseAndConvertAllParams = <
   T = DefaultParseAllParamsResponseType
 >(params: {
-  [key: string]: string | string[];
+  [key: string]: string | string[] | undefined | Object;
 }): T =>
   Object.keys(params).reduce((aggregateParams, key) => {
     if (Array.isArray(params[key])) {

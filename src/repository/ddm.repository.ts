@@ -1,5 +1,9 @@
 import { Collection, MongoClient, ObjectId } from 'mongodb';
-import { BeerOrLiquorBrand, MixedDrinkRecipe } from '@dgoudie/ddm-types';
+import {
+  BeerOrLiquorBrand,
+  MixedDrinkRecipe,
+  MixedDrinkRecipeWithIngredients,
+} from '@dgoudie/ddm-types';
 
 import { properties } from '../resources/properties';
 import { isDefinedAndNotNull } from '../utils/defined-null';
@@ -11,6 +15,9 @@ let beerOrLiquorBrandsCollection: Collection<BeerOrLiquorBrand>;
 let mixedDrinkRecipesCollection: Collection<MixedDrinkRecipe>;
 
 export async function init() {
+  if (!process.env.MONGODB_CONNECTION_URL) {
+    return;
+  }
   mongoClient = new MongoClient(process.env.MONGODB_CONNECTION_URL, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
@@ -33,15 +40,26 @@ export async function init() {
     );
 }
 
-export function getBeerOrLiquorBrands(filterText?: string, inStock?: boolean) {
-  let query = {};
-  if (isDefinedAndNotNull(inStock)) {
-    query = { ...query, inStock };
+export function getBeerOrLiquorBrands(
+  onlyShowInStock: boolean,
+  filterText?: string
+) {
+  let pipeline: object[] = [];
+  if (onlyShowInStock) {
+    pipeline = [...pipeline, { $match: { inStock: true } }];
   }
-  if (isDefinedAndNotNull(filterText)) {
-    query = { ...query, ...buildQueryForText(filterText) };
+  if (!!filterText) {
+    pipeline = [
+      ...pipeline,
+      {
+        $match: { $expr: buildOrQueryForText(filterText, '$nameNormalized') },
+      },
+    ];
   }
-  return beerOrLiquorBrandsCollection.find(query).sort({ name: 1 }).toArray();
+  return beerOrLiquorBrandsCollection
+    .aggregate(pipeline)
+    .sort({ name: 1 })
+    .toArray();
 }
 
 export async function markBeerOrLiquorAsInStock(
@@ -60,16 +78,179 @@ export async function markBeerOrLiquorAsInStock(
 export function getMixedDrinkRecipes(filterText?: string) {
   let query = {};
   if (isDefinedAndNotNull(filterText)) {
-    query = { ...query, ...buildQueryForText(filterText) };
+    query = { ...query, ...buildOrQueryForText(filterText!, 'name') };
   }
   return mixedDrinkRecipesCollection.find(query).sort({ name: 1 }).toArray();
 }
 
-const buildQueryForText = (text: string) => {
-  const tokenizedText = text.toLowerCase().replace(/\//g, '\\').split(' ');
-  return tokenizedText.map((token) => ({
-    $where: function () {
-      return !!(<string>this.name)?.toLowerCase().includes(token);
+export function getMixedDrinkRecipesWithIngredients(
+  onlyShowItemsWithAllIngedientsInStock: boolean,
+  filterText?: string
+) {
+  let pipeline: object[] = [
+    {
+      $lookup: {
+        from: properties.mongodbBeerOrLiquorBrandsCollectionName,
+        localField: 'requiredBeersOrLiquors._id',
+        foreignField: '_id',
+        as: 'requiredBeersOrLiquorsWithDetail',
+      },
     },
-  }));
+    {
+      $addFields: {
+        requiredBeersOrLiquors: {
+          $map: {
+            input: '$requiredBeersOrLiquorsWithDetail',
+            as: 'r',
+            in: {
+              _id: '$$r._id',
+              name: '$$r.name',
+              nameNormalized: '$$r.nameNormalized',
+              inStock: '$$r.inStock',
+              price: '$$r.price',
+              count: {
+                $arrayElemAt: [
+                  '$requiredBeersOrLiquors.count',
+                  {
+                    $indexOfArray: ['$requiredBeersOrLiquors._id', '$$r._id'],
+                  },
+                ],
+              },
+            },
+          },
+        },
+      },
+    },
+  ];
+  if (!!onlyShowItemsWithAllIngedientsInStock) {
+    pipeline = [
+      ...pipeline,
+      {
+        $match: {
+          requiredBeersOrLiquors: {
+            $not: {
+              $elemMatch: {
+                inStock: false,
+              },
+            },
+          },
+        },
+      },
+    ];
+  }
+  pipeline = [
+    ...pipeline,
+    {
+      $addFields: {
+        requiredBeersOrLiquors: {
+          $map: {
+            input: '$requiredBeersOrLiquors',
+            as: 'row',
+            in: {
+              _id: '$$row._id',
+              name: '$$row.name',
+              inStock: '$$row.inStock',
+              price: '$$row.price',
+              count: '$$row.count',
+              nameNormalized: '$$row.nameNormalized',
+              calculatedPrice: {
+                $multiply: ['$$row.price', '$$row.count'],
+              },
+            },
+          },
+        },
+      },
+    },
+  ];
+  if (!!filterText) {
+    pipeline = [
+      ...pipeline,
+      {
+        $addFields: {
+          requiredBeersOrLiquors: {
+            $map: {
+              input: '$requiredBeersOrLiquors',
+              as: 'row',
+              in: {
+                _id: '$$row._id',
+                name: '$$row.name',
+                inStock: '$$row.inStock',
+                price: '$$row.price',
+                count: '$$row.count',
+                nameNormalized: '$$row.nameNormalized',
+                calculatedPrice: '$$row.calculatedPrice',
+                nameMatch: buildOrQueryForText(
+                  filterText,
+                  '$$row.nameNormalized'
+                ),
+              },
+            },
+          },
+        },
+      },
+    ];
+  }
+  pipeline = [
+    ...pipeline,
+    {
+      $addFields: {
+        price: {
+          $ceil: {
+            $sum: '$requiredBeersOrLiquors.calculatedPrice',
+          },
+        },
+      },
+    },
+  ];
+  if (!!filterText) {
+    pipeline = [
+      ...pipeline,
+      {
+        $match: {
+          $or: [
+            {
+              $expr: buildOrQueryForText(filterText, '$nameNormalized'),
+            },
+            {
+              requiredBeersOrLiquors: {
+                $elemMatch: {
+                  nameMatch: true,
+                },
+              },
+            },
+          ],
+        },
+      },
+    ];
+  }
+  pipeline = [
+    ...pipeline,
+    {
+      $unset: [
+        'requiredBeersOrLiquors.calculatedPrice',
+        'requiredBeersOrLiquors.nameMatch',
+        'requiredBeersOrLiquorsWithDetail',
+      ],
+    },
+  ];
+
+  return mixedDrinkRecipesCollection
+    .aggregate<MixedDrinkRecipeWithIngredients>(pipeline)
+    .toArray();
+}
+
+const buildOrQueryForText = (
+  text: string,
+  argName: string
+): { $or: { $function: any }[] } => {
+  const tokenizedText = text.toLowerCase().replace(/\//g, '\\').split(' ');
+  return {
+    $or: tokenizedText.map<{ $function: any }>((token) => ({
+      $function: {
+        body: `function(text) { return text.includes("${token}")}`,
+        args: [argName],
+        lang: 'js',
+      },
+    })),
+  };
 };

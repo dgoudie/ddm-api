@@ -1,45 +1,31 @@
 import {
-  BeerOrLiquorBrand,
-  MixedDrinkRecipeWithIngredients,
-} from '@dgoudie/ddm-types';
-import {
   getBeerOrLiquorBrands as getBeerOrLiquorBrandsFromRepository,
-  getMixedDrinkRecipes as getMixedDrinkRecipesFromRepository,
+  getMixedDrinkRecipesWithIngredients as getMixedDrinkRecipesWithIngredientsFromRepository,
   markBeerOrLiquorAsInStock as markBeerOrLiquorAsInStockInRepository,
 } from '../repository/ddm.repository';
 
+import { MixedDrinkRecipeWithIngredients } from '@dgoudie/ddm-types';
 import { ObjectId } from 'bson';
 
-export async function getBeerOrLiquorBrands(filterText?: string) {
+export async function getBeerOrLiquorBrands(
+  onlyShowInStock = false,
+  filterText?: string
+) {
   try {
-    return getBeerOrLiquorBrandsFromRepository(filterText);
+    return getBeerOrLiquorBrandsFromRepository(onlyShowInStock, filterText);
   } catch (e) {
     throw new Error('Unable to query database.');
   }
 }
 export async function getMixedDrinkRecipesWithIngredients(
+  onlyShowItemsWithAllIngedientsInStock = false,
   filterText?: string
 ): Promise<MixedDrinkRecipeWithIngredients[]> {
   try {
-    return Promise.all([
-      getBeerOrLiquorBrandsFromRepository(),
-      getMixedDrinkRecipesFromRepository(filterText),
-    ]).then(async ([beerOrLiquorBrands, mixedDrinkRecipes]) => {
-      const beerOrLiquorMap = beerOrLiquorBrands.reduce(
-        (map, brand) => map.set(brand._id.toString(), brand),
-        new Map<string, BeerOrLiquorBrand>()
-      );
-      return mixedDrinkRecipes.map((mdr) => {
-        const requiredBeersOrLiquors = mdr.requiredBeerOrLiquorIds.map((id) => {
-          return beerOrLiquorMap.get(id.toString());
-        });
-        const mdrWithIngredients: MixedDrinkRecipeWithIngredients = {
-          ...mdr,
-          requiredBeersOrLiquors,
-        };
-        return mdrWithIngredients;
-      });
-    });
+    return getMixedDrinkRecipesWithIngredientsFromRepository(
+      onlyShowItemsWithAllIngedientsInStock,
+      filterText
+    );
   } catch (e) {
     throw new Error('Unable to query database.');
   }

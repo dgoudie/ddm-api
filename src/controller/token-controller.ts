@@ -10,12 +10,22 @@ import express from 'express';
 export function init(app: express.Application) {
   app.get('/api/login', (req, res, next) => {
     try {
-      const { token, expires } = generateTokenFromPassword(req.header('x-pw'));
-      res.cookie(AUTH_TOKEN, token, {
-        ...cookieOptions,
-        expires: new Date(expires),
-      });
-      res.sendStatus(200);
+      const password = req.header('x-pw');
+      if (!password) {
+        next(
+          new ServiceError(
+            422,
+            `Password Not Provided in 'x-pw' Header (Base64 Encoded)`
+          )
+        );
+      } else {
+        const { token, expires } = generateTokenFromPassword(password);
+        res.cookie(AUTH_TOKEN, token, {
+          ...cookieOptions,
+          expires: new Date(expires),
+        });
+        res.sendStatus(200);
+      }
     } catch (e) {
       next(new ServiceError(422, 'Incorrect Password'));
     }
@@ -31,7 +41,7 @@ export function init(app: express.Application) {
       res.sendStatus(200);
     } else {
       res.clearCookie(AUTH_TOKEN);
-      next(new ServiceError(422, 'Invalid Session Token'));
+      next(new ServiceError(401, 'Invalid Session Token'));
     }
   });
 }

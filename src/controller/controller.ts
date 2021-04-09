@@ -10,11 +10,24 @@ import { ServiceError } from '@dgoudie/service-error';
 import { ObjectId } from 'bson';
 
 export function init(app: express.Application) {
-  app.get('/api/beers-and-liquors', (req, res, next) =>
-    getBeerOrLiquorBrands()
-      .then((items) => res.send(items))
-      .catch((e) => next(e))
-  );
+  app.get('/api/beers-and-liquors', (req, res, next) => {
+    const { onlyInStock, filter } = <
+      { onlyInStock: boolean | undefined; filter: string }
+    >parseAndConvertAllParams(req.query);
+    if (
+      typeof onlyInStock !== 'boolean' &&
+      typeof onlyInStock !== 'undefined'
+    ) {
+      next(
+        new ServiceError(400, `Invalid boolean value for param 'onlyInStock'`)
+      );
+    } else {
+      getBeerOrLiquorBrands(onlyInStock, filter)
+        .then((items) => res.send(items))
+        .catch((e) => next(e));
+    }
+  });
+
   app.post(
     '/api/secure/beers-and-liquors/:id/mark-in-stock/:flag',
     (req, res, next) => {
@@ -42,9 +55,21 @@ export function init(app: express.Application) {
       }
     }
   );
-  app.get('/api/mixed-drinks', (req, res, next) =>
-    getMixedDrinkRecipesWithIngredients()
-      .then((items) => res.send(items))
-      .catch(next)
-  );
+  app.get('/api/mixed-drinks', (req, res, next) => {
+    const { onlyInStock, filter } = <
+      { onlyInStock: boolean | undefined; filter: string }
+    >parseAndConvertAllParams(req.query);
+    if (
+      typeof onlyInStock !== 'boolean' &&
+      typeof onlyInStock !== 'undefined'
+    ) {
+      next(
+        new ServiceError(400, `Invalid boolean value for param 'onlyInStock'`)
+      );
+    } else {
+      return getMixedDrinkRecipesWithIngredients(onlyInStock, filter)
+        .then((items) => res.send(items))
+        .catch(next);
+    }
+  });
 }
