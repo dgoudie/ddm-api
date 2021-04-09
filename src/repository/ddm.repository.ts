@@ -106,6 +106,7 @@ export function getMixedDrinkRecipesWithIngredients(
               _id: '$$r._id',
               name: '$$r.name',
               nameNormalized: '$$r.nameNormalized',
+              additionalNotes: '$$r.additionalNotes',
               inStock: '$$r.inStock',
               price: '$$r.price',
               count: {
@@ -153,6 +154,7 @@ export function getMixedDrinkRecipesWithIngredients(
               price: '$$row.price',
               count: '$$row.count',
               nameNormalized: '$$row.nameNormalized',
+              additionalNotes: '$$row.additionalNotes',
               calculatedPrice: {
                 $multiply: ['$$row.price', '$$row.count'],
               },
@@ -178,6 +180,7 @@ export function getMixedDrinkRecipesWithIngredients(
                 price: '$$row.price',
                 count: '$$row.count',
                 nameNormalized: '$$row.nameNormalized',
+                additionalNotes: '$$row.additionalNotes',
                 calculatedPrice: '$$row.calculatedPrice',
                 nameMatch: buildOrQueryForText(
                   filterText,
