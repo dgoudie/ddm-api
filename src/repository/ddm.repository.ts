@@ -198,9 +198,17 @@ export function getMixedDrinkRecipesWithIngredients(
     {
       $addFields: {
         price: {
-          $ceil: {
-            $sum: '$requiredBeersOrLiquors.calculatedPrice',
-          },
+          $divide: [
+            {
+              $round: {
+                $multiply: [
+                  { $sum: '$requiredBeersOrLiquors.calculatedPrice' },
+                  2,
+                ],
+              },
+            },
+            2,
+          ],
         },
       },
     },
