@@ -5,7 +5,12 @@ import {
   sendNotifications,
   translateServiceErrors,
 } from '@dgoudie/service-error';
-import express, { CookieOptions } from 'express';
+import express, {
+  CookieOptions,
+  NextFunction,
+  Request,
+  Response,
+} from 'express';
 import {
   generateNewTokenIfNecessary,
   verifyToken,

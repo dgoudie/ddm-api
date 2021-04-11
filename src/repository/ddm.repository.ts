@@ -62,10 +62,17 @@ export function getBeerOrLiquorBrands(
     .toArray();
 }
 
-export async function markBeerOrLiquorAsInStock(
-  _id: ObjectId,
-  inStock: boolean
-) {
+export async function getBeerOrLiquorBrand(id: string) {
+  let _id = validateAndConvertObjectId(id);
+  const record = await beerOrLiquorBrandsCollection.findOne({ _id });
+  if (!record) {
+    throw new ServiceError(404, `BeerOrLiquor with ID ${_id} not found`);
+  }
+  return record;
+}
+
+export async function markBeerOrLiquorAsInStock(id: string, inStock: boolean) {
+  let _id = validateAndConvertObjectId(id);
   const result = await beerOrLiquorBrandsCollection.updateOne(
     { _id },
     { $set: { inStock } }
@@ -249,6 +256,14 @@ export function getMixedDrinkRecipesWithIngredients(
     .aggregate<MixedDrinkRecipeWithIngredients>(pipeline)
     .toArray();
 }
+
+const validateAndConvertObjectId = (id: string) => {
+  try {
+    return new ObjectId(id);
+  } catch (e) {
+    throw new ServiceError(400, 'Invalid ID provided');
+  }
+};
 
 const buildOrQueryForText = (
   text: string,

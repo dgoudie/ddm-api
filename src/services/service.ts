@@ -1,11 +1,11 @@
 import {
+  getBeerOrLiquorBrand as getBeerOrLiquorBrandFromRepository,
   getBeerOrLiquorBrands as getBeerOrLiquorBrandsFromRepository,
   getMixedDrinkRecipesWithIngredients as getMixedDrinkRecipesWithIngredientsFromRepository,
   markBeerOrLiquorAsInStock as markBeerOrLiquorAsInStockInRepository,
 } from '../repository/ddm.repository';
 
 import { MixedDrinkRecipeWithIngredients } from '@dgoudie/ddm-types';
-import { ObjectId } from 'bson';
 
 export async function getBeerOrLiquorBrands(
   onlyShowInStock = false,
@@ -17,6 +17,14 @@ export async function getBeerOrLiquorBrands(
     throw new Error('Unable to query database.');
   }
 }
+export function getBeerOrLiquorBrand(id: string) {
+  return getBeerOrLiquorBrandFromRepository(id);
+}
+
+export function markBeerOrLiquorAsInStock(id: string, flag: boolean) {
+  return markBeerOrLiquorAsInStockInRepository(id, flag);
+}
+
 export async function getMixedDrinkRecipesWithIngredients(
   onlyShowItemsWithAllIngedientsInStock = false,
   filterText?: string
@@ -29,8 +37,4 @@ export async function getMixedDrinkRecipesWithIngredients(
   } catch (e) {
     throw new Error('Unable to query database.');
   }
-}
-
-export function markBeerOrLiquorAsInStock(id: ObjectId, flag: boolean) {
-  return markBeerOrLiquorAsInStockInRepository(id, flag);
 }

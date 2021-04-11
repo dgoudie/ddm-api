@@ -13,7 +13,7 @@
     "prod": "node build/app"
   },
   "dependencies": {
-    "@dgoudie/service-error": "^2.0.2-3",
+    "@dgoudie/service-error": "^3.0.0-4",
     "cookie-parser": "^1.4.5",
     "cors": "^2.8.5",
     "cross-env": "^5.2.1",

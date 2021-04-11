@@ -1,4 +1,5 @@
 import {
+  getBeerOrLiquorBrand,
   getBeerOrLiquorBrands,
   getMixedDrinkRecipesWithIngredients,
   markBeerOrLiquorAsInStock,
@@ -7,7 +8,6 @@ import {
 import express from 'express';
 import { parseAndConvertAllParams } from '../utils/parse-query-param';
 import { ServiceError } from '@dgoudie/service-error';
-import { ObjectId } from 'bson';
 
 export function init(app: express.Application) {
   app.get('/api/beers-and-liquors', (req, res, next) => {
@@ -28,6 +28,18 @@ export function init(app: express.Application) {
     }
   });
 
+  app.get('/api/beer-or-liquor/:id', (req, res, next) => {
+    const { id } = <{ id: string }>parseAndConvertAllParams(req.params);
+
+    if (typeof id !== 'string') {
+      next(new ServiceError(400, `:id parameter must be a string`));
+      return;
+    }
+    getBeerOrLiquorBrand(id)
+      .then((record) => res.send(record))
+      .catch(next);
+  });
+
   app.post(
     '/api/secure/beers-and-liquors/:id/mark-in-stock/:flag',
     (req, res, next) => {
@@ -41,18 +53,15 @@ export function init(app: express.Application) {
             `:flag parameter must be a boolean ('true' or 'false')`
           )
         );
-      } else {
-        let objectId: ObjectId;
-        try {
-          objectId = new ObjectId(id);
-        } catch (e) {
-          next(new ServiceError(400, 'Invalid parameter :id'));
-          return;
-        }
-        markBeerOrLiquorAsInStock(objectId, flag)
-          .then(() => res.sendStatus(204))
-          .catch(next);
+        return;
       }
+      if (typeof id !== 'string') {
+        next(new ServiceError(400, `:id parameter must be a string`));
+        return;
+      }
+      markBeerOrLiquorAsInStock(id, flag)
+        .then(() => res.sendStatus(204))
+        .catch(next);
     }
   );
   app.get('/api/mixed-drinks', (req, res, next) => {
