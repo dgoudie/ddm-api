@@ -82,6 +82,34 @@ export async function markBeerOrLiquorAsInStock(id: string, inStock: boolean) {
   }
 }
 
+export async function saveBeerOrLiquor(
+  id: string | undefined,
+  beerOrLiquor: BeerOrLiquorBrand
+) {
+  if (!!id) {
+    let _id = validateAndConvertObjectId(id);
+    const result = await beerOrLiquorBrandsCollection.updateOne(
+      { _id },
+      { $set: { ...beerOrLiquor } }
+    );
+    if (result.matchedCount === 0) {
+      throw new ServiceError(400, `BeerOrLiquor with ID ${_id} not found`);
+    }
+    return id;
+  } else {
+    const result = await beerOrLiquorBrandsCollection.insertOne(beerOrLiquor);
+    return result.insertedId.toHexString();
+  }
+}
+
+export async function deleteBeerOrLiquor(id: string) {
+  let _id = validateAndConvertObjectId(id);
+  await mixedDrinkRecipesCollection.deleteMany({
+    'requiredBeersOrLiquors._id': _id,
+  });
+  await beerOrLiquorBrandsCollection.deleteOne({ _id });
+}
+
 export function getMixedDrinkRecipes(filterText?: string) {
   let query = {};
   if (isDefinedAndNotNull(filterText)) {

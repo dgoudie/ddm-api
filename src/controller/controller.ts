@@ -1,8 +1,10 @@
 import {
+  deleteBeerOrLiquor,
   getBeerOrLiquorBrand,
   getBeerOrLiquorBrands,
   getMixedDrinkRecipesWithIngredients,
   markBeerOrLiquorAsInStock,
+  saveBeerOrLiquor,
 } from '../services/service';
 
 import express from 'express';
@@ -41,7 +43,7 @@ export function init(app: express.Application) {
   });
 
   app.post(
-    '/api/secure/beers-and-liquors/:id/mark-in-stock/:flag',
+    '/api/secure/beer-or-liquor/:id/mark-in-stock/:flag',
     (req, res, next) => {
       const { id, flag } = <{ id: string; flag: boolean }>(
         parseAndConvertAllParams(req.params)
@@ -64,6 +66,28 @@ export function init(app: express.Application) {
         .catch(next);
     }
   );
+  app.put('/api/secure/beer-or-liquor/:id?', (req, res, next) => {
+    const { id } = <{ id?: string }>parseAndConvertAllParams(req.params);
+    if (typeof id !== 'string' && typeof id !== 'undefined') {
+      next(new ServiceError(400, `:id parameter must be a string`));
+      return;
+    }
+    saveBeerOrLiquor(id, req.body)
+      .then((id) => res.status(200).send(id))
+      .catch(next);
+  });
+
+  app.delete('/api/secure/beer-or-liquor/:id', (req, res, next) => {
+    const { id } = <{ id: string }>parseAndConvertAllParams(req.params);
+    if (typeof id !== 'string') {
+      next(new ServiceError(400, `:id parameter must be a string`));
+      return;
+    }
+    deleteBeerOrLiquor(id)
+      .then(() => res.sendStatus(204))
+      .catch(next);
+  });
+
   app.get('/api/mixed-drinks', (req, res, next) => {
     const { onlyInStock, filter } = <
       { onlyInStock: boolean | undefined; filter: string }

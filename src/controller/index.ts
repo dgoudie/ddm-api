@@ -53,10 +53,9 @@ export function init() {
 function setupPreRequestMiddleware(app: express.Application) {
   app.use(cors({ credentials: true, origin: process.env.USER_INTERFACE_PATH }));
   app.use(cookieParser());
+  app.use(express.json());
   app.use((req, res, next) => {
-    if (!req.url.match(/^\/docs\/?/)) {
-      getLogger().info(`Received request to ${req.url}`);
-    }
+    getLogger().info(`Received request to ${decodeURIComponent(req.url)}`);
     next();
   });
   app.use('*/secure*', (req, res, next) => {

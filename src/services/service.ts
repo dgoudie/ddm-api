@@ -1,11 +1,15 @@
 import {
+  BeerOrLiquorBrand,
+  MixedDrinkRecipeWithIngredients,
+} from '@dgoudie/ddm-types';
+import {
+  deleteBeerOrLiquor as deleteBeerOrLiquorFromRepository,
   getBeerOrLiquorBrand as getBeerOrLiquorBrandFromRepository,
   getBeerOrLiquorBrands as getBeerOrLiquorBrandsFromRepository,
   getMixedDrinkRecipesWithIngredients as getMixedDrinkRecipesWithIngredientsFromRepository,
   markBeerOrLiquorAsInStock as markBeerOrLiquorAsInStockInRepository,
+  saveBeerOrLiquor as saveBeerOrLiquorToRepository,
 } from '../repository/ddm.repository';
-
-import { MixedDrinkRecipeWithIngredients } from '@dgoudie/ddm-types';
 
 export async function getBeerOrLiquorBrands(
   onlyShowInStock = false,
@@ -23,6 +27,17 @@ export function getBeerOrLiquorBrand(id: string) {
 
 export function markBeerOrLiquorAsInStock(id: string, flag: boolean) {
   return markBeerOrLiquorAsInStockInRepository(id, flag);
+}
+
+export function saveBeerOrLiquor(
+  id: string | undefined,
+  beerOrLiquor: BeerOrLiquorBrand
+) {
+  return saveBeerOrLiquorToRepository(id, beerOrLiquor);
+}
+
+export async function deleteBeerOrLiquor(id: string) {
+  await deleteBeerOrLiquorFromRepository(id);
 }
 
 export async function getMixedDrinkRecipesWithIngredients(
