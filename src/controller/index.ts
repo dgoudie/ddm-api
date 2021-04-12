@@ -51,7 +51,13 @@ export function init() {
   );
 }
 function setupPreRequestMiddleware(app: express.Application) {
-  app.use(cors({ credentials: true, origin: process.env.USER_INTERFACE_PATH }));
+  app.use(
+    cors({
+      credentials: true,
+      origin: process.env.USER_INTERFACE_PATH,
+      methods: ['GET', 'HEAD', 'PUT', 'POST', 'DELETE'],
+    })
+  );
   app.use(cookieParser());
   app.use(express.json());
   app.use((req, res, next) => {
