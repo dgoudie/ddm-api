@@ -55,7 +55,7 @@ function setupPreRequestMiddleware(app: express.Application) {
     cors({
       credentials: true,
       origin: process.env.USER_INTERFACE_PATH,
-      methods: ['GET', 'HEAD', 'PUT', 'POST', 'DELETE'],
+      // methods: ['GET', 'HEAD', 'PUT', 'POST', 'DELETE'],
     })
   );
   app.use(cookieParser());
