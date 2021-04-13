@@ -62,7 +62,7 @@ export function getBeerOrLiquorBrands(
   }
   return beerOrLiquorBrandsCollection
     .aggregate(pipeline)
-    .sort({ name: 1 })
+    .sort({ nameNormalized: 1 })
     .toArray();
 }
 
@@ -112,14 +112,6 @@ export async function deleteBeerOrLiquor(id: string) {
     'requiredBeersOrLiquors._id': _id,
   });
   await beerOrLiquorBrandsCollection.deleteOne({ _id });
-}
-
-export function getMixedDrinkRecipes(filterText?: string) {
-  let query = {};
-  if (isDefinedAndNotNull(filterText)) {
-    query = { ...query, ...buildOrQueryForText(filterText!, 'name') };
-  }
-  return mixedDrinkRecipesCollection.find(query).sort({ name: 1 }).toArray();
 }
 
 export function getMixedDrinkRecipesWithIngredients(
@@ -286,6 +278,7 @@ export function getMixedDrinkRecipesWithIngredients(
 
   return mixedDrinkRecipesCollection
     .aggregate<MixedDrinkRecipeWithIngredients>(pipeline)
+    .sort({ nameNormalized: 1 })
     .toArray();
 }
 
