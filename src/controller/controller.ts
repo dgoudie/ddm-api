@@ -96,6 +96,13 @@ export function init(app: express.Application) {
     }
     saveBeerOrLiquor(id, req.body)
       .then((id) => res.status(200).send(id))
+      .then(() => {
+        broadcastToWebsocketClients({
+          type: 'UPDATE',
+          apiPath: `/beers-and-liquors`,
+          timestamp: Date.now(),
+        });
+      })
       .catch(next);
   });
 
@@ -107,6 +114,13 @@ export function init(app: express.Application) {
     }
     deleteBeerOrLiquor(id)
       .then(() => res.sendStatus(204))
+      .then(() => {
+        broadcastToWebsocketClients({
+          type: 'UPDATE',
+          apiPath: `/beers-and-liquors`,
+          timestamp: Date.now(),
+        });
+      })
       .catch(next);
   });
 
