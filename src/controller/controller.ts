@@ -13,8 +13,12 @@ import { ServiceError } from '@dgoudie/service-error';
 
 export function init(app: express.Application) {
   app.get('/api/beers-and-liquors', (req, res, next) => {
-    const { onlyInStock, filter } = <
-      { onlyInStock: boolean | undefined; filter: string }
+    const { onlyInStock, onlyOutOfStock, filter } = <
+      {
+        onlyInStock: boolean | undefined;
+        onlyOutOfStock: boolean | undefined;
+        filter: string;
+      }
     >parseAndConvertAllParams(req.query);
     if (
       typeof onlyInStock !== 'boolean' &&
@@ -23,8 +27,18 @@ export function init(app: express.Application) {
       next(
         new ServiceError(400, `Invalid boolean value for param 'onlyInStock'`)
       );
+    } else if (
+      typeof onlyOutOfStock !== 'boolean' &&
+      typeof onlyOutOfStock !== 'undefined'
+    ) {
+      next(
+        new ServiceError(
+          400,
+          `Invalid boolean value for param 'onlyOutOfStock'`
+        )
+      );
     } else {
-      getBeerOrLiquorBrands(onlyInStock, filter)
+      getBeerOrLiquorBrands(onlyInStock, onlyOutOfStock, filter)
         .then((items) => res.send(items))
         .catch((e) => next(e));
     }

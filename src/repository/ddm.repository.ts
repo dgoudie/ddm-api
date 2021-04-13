@@ -42,11 +42,15 @@ export async function init() {
 
 export function getBeerOrLiquorBrands(
   onlyShowInStock: boolean,
+  onlyOutOfStock: boolean,
   filterText?: string
 ) {
   let pipeline: object[] = [];
   if (onlyShowInStock) {
     pipeline = [...pipeline, { $match: { inStock: true } }];
+  }
+  if (onlyOutOfStock) {
+    pipeline = [...pipeline, { $match: { inStock: false } }];
   }
   if (!!filterText) {
     pipeline = [

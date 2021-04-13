@@ -13,10 +13,15 @@ import {
 
 export async function getBeerOrLiquorBrands(
   onlyShowInStock = false,
+  onlyOutOfStock = false,
   filterText?: string
 ) {
   try {
-    return getBeerOrLiquorBrandsFromRepository(onlyShowInStock, filterText);
+    return getBeerOrLiquorBrandsFromRepository(
+      onlyShowInStock,
+      onlyOutOfStock,
+      filterText
+    );
   } catch (e) {
     throw new Error('Unable to query database.');
   }
