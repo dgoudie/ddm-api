@@ -2,15 +2,9 @@ import {
   ServiceError,
   handleNotFound,
   handleRemainingErrors,
-  sendNotifications,
   translateServiceErrors,
 } from '@dgoudie/service-error';
-import express, {
-  CookieOptions,
-  NextFunction,
-  Request,
-  Response,
-} from 'express';
+import express, { CookieOptions } from 'express';
 import {
   generateNewTokenIfNecessary,
   verifyToken,
@@ -21,7 +15,9 @@ import cors from 'cors';
 import { getLogger } from 'log4js';
 import { init as initController } from '../controller/controller';
 import { init as initTokenController } from '../controller/token-controller';
+import { init as initWebSockets } from './ws';
 import { properties } from '../resources/properties';
+import ws from 'express-ws';
 
 export const AUTH_TOKEN = 'AUTH_TOKEN';
 
@@ -36,11 +32,13 @@ export function init() {
   if (!process.env.USER_INTERFACE_PATH) {
     getLogger().error(`environment variable USER_INTERFACE_PATH not found.`);
   }
-  const app = express();
+  const wsInstance = ws(express());
+  const app = wsInstance.app;
 
   setupPreRequestMiddleware(app);
   setupHealthCheck(app);
 
+  initWebSockets(app, wsInstance);
   initController(app);
   initTokenController(app);
 
@@ -50,6 +48,7 @@ export function init() {
     getLogger().info(`listening on ${properties.serverPort}`)
   );
 }
+
 function setupPreRequestMiddleware(app: express.Application) {
   app.use(
     cors({

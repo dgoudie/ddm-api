@@ -10,6 +10,7 @@ import {
 import express from 'express';
 import { parseAndConvertAllParams } from '../utils/parse-query-param';
 import { ServiceError } from '@dgoudie/service-error';
+import { broadcastToWebsocketClients } from './ws';
 
 export function init(app: express.Application) {
   app.get('/api/beers-and-liquors', (req, res, next) => {
@@ -77,6 +78,13 @@ export function init(app: express.Application) {
       }
       markBeerOrLiquorAsInStock(id, flag)
         .then(() => res.sendStatus(204))
+        .then(() => {
+          broadcastToWebsocketClients({
+            type: 'UPDATE',
+            apiPath: `/beers-and-liquors`,
+            timestamp: Date.now(),
+          });
+        })
         .catch(next);
     }
   );
