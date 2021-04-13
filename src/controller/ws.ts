@@ -1,21 +1,28 @@
+import { WsBroadcastMessage } from '@dgoudie/ddm-types';
+import { getLogger } from 'log4js';
 import ws from 'express-ws';
 
 let wsInstance: ws.Instance;
 
 export const init = (app: ws.Application, instance: ws.Instance) => {
   wsInstance = instance;
-  app.ws('/api', function (_ws, _req) {});
+  app.ws('/api', function (ws, req) {
+    getLogger().info(
+      `Websocket connection established (IP: ${req.ip}). Client count: ${
+        instance.getWss().clients.size
+      }`
+    );
+    ws.on('close', (code) =>
+      getLogger().info(
+        `Websocket connection closed (IP: ${
+          req.ip
+        }; Code: ${code}). Client count: ${instance.getWss().clients.size}`
+      )
+    );
+  });
 };
 
-type UpdateMessage = {
-  type: 'UPDATE';
-  apiPath: string;
-  timestamp: number;
-};
-
-type BroadcastMessage = UpdateMessage;
-
-export const broadcastToWebsocketClients = (message: BroadcastMessage) => {
+export const broadcastToWebsocketClients = (message: WsBroadcastMessage) => {
   wsInstance
     .getWss()
     .clients.forEach((client) => client.send(JSON.stringify(message)));
