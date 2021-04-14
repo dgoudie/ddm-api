@@ -82,12 +82,10 @@ export function init(app: express.Application) {
           broadcastToWebsocketClients({
             type: 'UPDATE',
             apiPath: `/beers-and-liquors`,
-            timestamp: Date.now(),
           });
           broadcastToWebsocketClients({
             type: 'UPDATE',
             apiPath: `/mixed-drinks`,
-            timestamp: Date.now(),
           });
         })
         .catch(next);
@@ -105,12 +103,10 @@ export function init(app: express.Application) {
         broadcastToWebsocketClients({
           type: 'UPDATE',
           apiPath: `/beers-and-liquors`,
-          timestamp: Date.now(),
         });
         broadcastToWebsocketClients({
           type: 'UPDATE',
           apiPath: `/mixed-drinks`,
-          timestamp: Date.now(),
         });
       })
       .catch(next);
@@ -128,12 +124,10 @@ export function init(app: express.Application) {
         broadcastToWebsocketClients({
           type: 'UPDATE',
           apiPath: `/beers-and-liquors`,
-          timestamp: Date.now(),
         });
         broadcastToWebsocketClients({
           type: 'UPDATE',
           apiPath: `/mixed-drinks`,
-          timestamp: Date.now(),
         });
       })
       .catch(next);
