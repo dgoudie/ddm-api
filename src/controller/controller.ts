@@ -14,13 +14,13 @@ import { broadcastToWebsocketClients } from './ws';
 
 export function init(app: express.Application) {
   app.get('/api/beers-and-liquors', (req, res, next) => {
-    const { onlyInStock, onlyOutOfStock, filter } = <
+    const { onlyInStock, onlyOutOfStock } = <
       {
         onlyInStock: boolean | undefined;
         onlyOutOfStock: boolean | undefined;
-        filter: string;
       }
     >parseAndConvertAllParams(req.query);
+    const filter = req.query.filter as string;
     if (
       typeof onlyInStock !== 'boolean' &&
       typeof onlyInStock !== 'undefined'
@@ -134,9 +134,10 @@ export function init(app: express.Application) {
   });
 
   app.get('/api/mixed-drinks', (req, res, next) => {
-    const { onlyInStock, filter } = <
-      { onlyInStock: boolean | undefined; filter: string }
-    >parseAndConvertAllParams(req.query);
+    const { onlyInStock } = <{ onlyInStock: boolean | undefined }>(
+      parseAndConvertAllParams(req.query)
+    );
+    const filter = req.query.filter as string;
     if (
       typeof onlyInStock !== 'boolean' &&
       typeof onlyInStock !== 'undefined'
