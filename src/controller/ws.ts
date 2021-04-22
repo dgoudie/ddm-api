@@ -8,13 +8,13 @@ export const init = (app: ws.Application, instance: ws.Instance) => {
   wsInstance = instance;
   app.ws('/api', function (ws, req) {
     getLogger().info(
-      `Websocket connection established (IP: ${req.ip}). Client count: ${
+      `Websocket connection established (${req.ip}). Client count: ${
         instance.getWss().clients.size
       }`
     );
     ws.on('close', (code) =>
       getLogger().info(
-        `Websocket connection closed (IP: ${
+        `Websocket connection closed (${
           req.ip
         }; Code: ${code}). Client count: ${instance.getWss().clients.size}`
       )
