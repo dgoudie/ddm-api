@@ -84,7 +84,6 @@ export function saveMixedDrinkRecipe(
       objectIdCountMap.entries()
     ).map(([_id, count]) => ({ _id, count })),
   };
-  console.log(id, mixedDrink);
   return saveMixedDrinkRecipeToRepository(id, mixedDrink);
 }
 
