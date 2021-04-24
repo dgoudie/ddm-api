@@ -2,9 +2,11 @@ import {
   deleteBeerOrLiquor,
   getBeerOrLiquorBrand,
   getBeerOrLiquorBrands,
+  getMixedDrinkRecipe,
   getMixedDrinkRecipesWithIngredients,
   markBeerOrLiquorAsInStock,
   saveBeerOrLiquor,
+  saveMixedDrinkRecipe,
 } from '../services/service';
 
 import express from 'express';
@@ -150,5 +152,33 @@ export function init(app: express.Application) {
         .then((items) => res.send(items))
         .catch(next);
     }
+  });
+
+  app.get('/api/mixed-drink/:id', (req, res, next) => {
+    const { id } = <{ id: string }>parseAndConvertAllParams(req.params);
+
+    if (typeof id !== 'string') {
+      next(new ServiceError(400, `:id parameter must be a string`));
+      return;
+    }
+    getMixedDrinkRecipe(id)
+      .then((record) => res.send(record))
+      .catch(next);
+  });
+  app.put('/api/secure/mixed-drink/:id?', (req, res, next) => {
+    const { id } = <{ id?: string }>parseAndConvertAllParams(req.params);
+    if (typeof id !== 'string' && typeof id !== 'undefined') {
+      next(new ServiceError(400, `:id parameter must be a string`));
+      return;
+    }
+    saveMixedDrinkRecipe(id, req.body)
+      .then((id) => res.status(200).send(id))
+      .then(() => {
+        broadcastToWebsocketClients({
+          type: 'UPDATE',
+          apiPath: `/mixed-drinks`,
+        });
+      })
+      .catch(next);
   });
 }

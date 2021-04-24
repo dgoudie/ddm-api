@@ -6,9 +6,10 @@ import {
 } from '@dgoudie/ddm-types';
 
 import { properties } from '../resources/properties';
-import { isDefinedAndNotNull } from '../utils/defined-null';
 import { getLogger } from 'log4js';
 import { ServiceError } from '@dgoudie/service-error';
+import { translateMongodbException } from '../utils/translate-mongodb-exception';
+import { validateAndConvertObjectId } from '../utils/object-id';
 
 let mongoClient: MongoClient;
 let beerOrLiquorBrandsCollection: Collection<BeerOrLiquorBrand>;
@@ -68,7 +69,9 @@ export function getBeerOrLiquorBrands(
 
 export async function getBeerOrLiquorBrand(id: string) {
   let _id = validateAndConvertObjectId(id);
-  const record = await beerOrLiquorBrandsCollection.findOne({ _id });
+  const record = await beerOrLiquorBrandsCollection
+    .findOne({ _id })
+    .catch(translateMongodbException());
   if (!record) {
     throw new ServiceError(404, `BeerOrLiquor with ID ${_id} not found`);
   }
@@ -77,10 +80,9 @@ export async function getBeerOrLiquorBrand(id: string) {
 
 export async function markBeerOrLiquorAsInStock(id: string, inStock: boolean) {
   let _id = validateAndConvertObjectId(id);
-  const result = await beerOrLiquorBrandsCollection.updateOne(
-    { _id },
-    { $set: { inStock } }
-  );
+  const result = await beerOrLiquorBrandsCollection
+    .updateOne({ _id }, { $set: { inStock } })
+    .catch(translateMongodbException());
   if (result.matchedCount === 0) {
     throw new ServiceError(400, `BeerOrLiquor with ID ${_id} not found`);
   }
@@ -88,30 +90,46 @@ export async function markBeerOrLiquorAsInStock(id: string, inStock: boolean) {
 
 export async function saveBeerOrLiquor(
   id: string | undefined,
-  beerOrLiquor: BeerOrLiquorBrand
+  beerOrLiquor: BeerOrLiquorBrand & { _id: undefined }
 ) {
   if (!!id) {
     let _id = validateAndConvertObjectId(id);
-    const result = await beerOrLiquorBrandsCollection.updateOne(
-      { _id },
-      { $set: { ...beerOrLiquor } }
-    );
+    const result = await beerOrLiquorBrandsCollection
+      .updateOne({ _id }, { $set: { ...beerOrLiquor } })
+      .catch(translateMongodbException());
     if (result.matchedCount === 0) {
       throw new ServiceError(400, `BeerOrLiquor with ID ${_id} not found`);
     }
     return id;
   } else {
-    const result = await beerOrLiquorBrandsCollection.insertOne(beerOrLiquor);
+    const result = await beerOrLiquorBrandsCollection
+      .insertOne(beerOrLiquor)
+      .catch(translateMongodbException());
     return result.insertedId.toHexString();
   }
 }
 
 export async function deleteBeerOrLiquor(id: string) {
   let _id = validateAndConvertObjectId(id);
-  await mixedDrinkRecipesCollection.deleteMany({
-    'requiredBeersOrLiquors._id': _id,
-  });
-  await beerOrLiquorBrandsCollection.deleteOne({ _id });
+  await mixedDrinkRecipesCollection
+    .deleteMany({
+      'requiredBeersOrLiquors._id': _id,
+    })
+    .catch(translateMongodbException());
+  await beerOrLiquorBrandsCollection
+    .deleteOne({ _id })
+    .catch(translateMongodbException());
+}
+
+export async function getMixedDrinkRecipe(id: string) {
+  let _id = validateAndConvertObjectId(id);
+  const record = await mixedDrinkRecipesCollection
+    .findOne({ _id })
+    .catch(translateMongodbException());
+  if (!record) {
+    throw new ServiceError(404, `MixedDrink with ID ${_id} not found`);
+  }
+  return record;
 }
 
 export function getMixedDrinkRecipesWithIngredients(
@@ -279,16 +297,36 @@ export function getMixedDrinkRecipesWithIngredients(
   return mixedDrinkRecipesCollection
     .aggregate<MixedDrinkRecipeWithIngredients>(pipeline)
     .sort({ nameNormalized: 1 })
-    .toArray();
+    .toArray()
+    .catch(translateMongodbException());
 }
 
-const validateAndConvertObjectId = (id: string) => {
-  try {
-    return new ObjectId(id);
-  } catch (e) {
-    throw new ServiceError(400, 'Invalid ID provided');
+export async function saveMixedDrinkRecipe(
+  id: string | undefined,
+  mixedDrink: MixedDrinkRecipe & { _id: undefined }
+) {
+  if (!!id) {
+    let _id = validateAndConvertObjectId(id);
+    const requiredBeersOrLiquors = mixedDrink?.requiredBeersOrLiquors?.map(
+      (drink) => ({
+        ...drink,
+        _id: validateAndConvertObjectId((drink._id as unknown) as string),
+      })
+    );
+    const result = await mixedDrinkRecipesCollection
+      .updateOne({ _id }, { $set: { ...mixedDrink, requiredBeersOrLiquors } })
+      .catch(translateMongodbException());
+    if (result.matchedCount === 0) {
+      throw new ServiceError(400, `BeerOrLiquor with ID ${_id} not found`);
+    }
+    return id;
+  } else {
+    const result = await mixedDrinkRecipesCollection
+      .insertOne(mixedDrink)
+      .catch(translateMongodbException());
+    return result.insertedId.toHexString();
   }
-};
+}
 
 const buildOrQueryForText = (
   text: string,

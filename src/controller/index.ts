@@ -34,7 +34,7 @@ export function init() {
   }
   const wsInstance = ws(express());
   const app = wsInstance.app;
-
+  app.set('trust proxy', true);
   setupPreRequestMiddleware(app);
   setupHealthCheck(app);
 
