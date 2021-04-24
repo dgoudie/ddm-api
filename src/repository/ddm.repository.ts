@@ -328,6 +328,13 @@ export async function saveMixedDrinkRecipe(
   }
 }
 
+export async function deleteMixedDrink(id: string) {
+  let _id = validateAndConvertObjectId(id);
+  await mixedDrinkRecipesCollection
+    .deleteOne({ _id })
+    .catch(translateMongodbException());
+}
+
 const buildOrQueryForText = (
   text: string,
   argName: string

@@ -1,5 +1,6 @@
 import {
   deleteBeerOrLiquor,
+  deleteMixedDrink,
   getBeerOrLiquorBrand,
   getBeerOrLiquorBrands,
   getMixedDrinkRecipe,
@@ -12,7 +13,10 @@ import {
 import express from 'express';
 import { parseAndConvertAllParams } from '../utils/parse-query-param';
 import { ServiceError } from '@dgoudie/service-error';
-import { broadcastToWebsocketClients } from './ws';
+import {
+  broadcastToWebsocketClients,
+  broadcastUpdateToWebsocketClients,
+} from './ws';
 
 export function init(app: express.Application) {
   app.get('/api/beers-and-liquors', (req, res, next) => {
@@ -81,14 +85,8 @@ export function init(app: express.Application) {
       markBeerOrLiquorAsInStock(id, flag)
         .then(() => res.sendStatus(204))
         .then(() => {
-          broadcastToWebsocketClients({
-            type: 'UPDATE',
-            apiPath: `/beers-and-liquors`,
-          });
-          broadcastToWebsocketClients({
-            type: 'UPDATE',
-            apiPath: `/mixed-drinks`,
-          });
+          broadcastUpdateToWebsocketClients(`/beers-and-liquors`);
+          broadcastUpdateToWebsocketClients(`/mixed-drinks`);
         })
         .catch(next);
     }
@@ -102,14 +100,8 @@ export function init(app: express.Application) {
     saveBeerOrLiquor(id, req.body)
       .then((id) => res.status(200).send(id))
       .then(() => {
-        broadcastToWebsocketClients({
-          type: 'UPDATE',
-          apiPath: `/beers-and-liquors`,
-        });
-        broadcastToWebsocketClients({
-          type: 'UPDATE',
-          apiPath: `/mixed-drinks`,
-        });
+        broadcastUpdateToWebsocketClients(`/beers-and-liquors`);
+        broadcastUpdateToWebsocketClients(`/mixed-drinks`);
       })
       .catch(next);
   });
@@ -123,14 +115,8 @@ export function init(app: express.Application) {
     deleteBeerOrLiquor(id)
       .then(() => res.sendStatus(204))
       .then(() => {
-        broadcastToWebsocketClients({
-          type: 'UPDATE',
-          apiPath: `/beers-and-liquors`,
-        });
-        broadcastToWebsocketClients({
-          type: 'UPDATE',
-          apiPath: `/mixed-drinks`,
-        });
+        broadcastUpdateToWebsocketClients(`/beers-and-liquors`);
+        broadcastUpdateToWebsocketClients(`/mixed-drinks`);
       })
       .catch(next);
   });
@@ -174,10 +160,20 @@ export function init(app: express.Application) {
     saveMixedDrinkRecipe(id, req.body)
       .then((id) => res.status(200).send(id))
       .then(() => {
-        broadcastToWebsocketClients({
-          type: 'UPDATE',
-          apiPath: `/mixed-drinks`,
-        });
+        broadcastUpdateToWebsocketClients(`/mixed-drinks`);
+      })
+      .catch(next);
+  });
+  app.delete('/api/secure/mixed-drink/:id', (req, res, next) => {
+    const { id } = <{ id: string }>parseAndConvertAllParams(req.params);
+    if (typeof id !== 'string') {
+      next(new ServiceError(400, `:id parameter must be a string`));
+      return;
+    }
+    deleteMixedDrink(id)
+      .then(() => res.sendStatus(204))
+      .then(() => {
+        broadcastUpdateToWebsocketClients(`/mixed-drinks`);
       })
       .catch(next);
   });

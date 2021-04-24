@@ -22,6 +22,13 @@ export const init = (app: ws.Application, instance: ws.Instance) => {
   });
 };
 
+export const broadcastUpdateToWebsocketClients = (apiPath: string) =>
+  broadcastToWebsocketClients({
+    apiPath,
+    type: 'UPDATE',
+    timestamp: Date.now(),
+  });
+
 export const broadcastToWebsocketClients = (message: WsBroadcastMessage) => {
   wsInstance
     .getWss()

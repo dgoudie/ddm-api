@@ -5,6 +5,7 @@ import {
 } from '@dgoudie/ddm-types';
 import {
   deleteBeerOrLiquor as deleteBeerOrLiquorFromRepository,
+  deleteMixedDrink as deleteMixedDrinkFromRepository,
   getBeerOrLiquorBrand as getBeerOrLiquorBrandFromRepository,
   getBeerOrLiquorBrands as getBeerOrLiquorBrandsFromRepository,
   getMixedDrinkRecipe as getMixedDrinkRecipeFromRepository,
@@ -77,6 +78,16 @@ export function saveMixedDrinkRecipe(
   mixedDrink?.requiredBeersOrLiquors?.forEach((liquor) =>
     objectIdCountMap.set(validateAndConvertObjectId(liquor._id), liquor.count)
   );
-  console.log(objectIdCountMap);
+  mixedDrink = {
+    ...mixedDrink,
+    requiredBeersOrLiquors: Array.from(
+      objectIdCountMap.entries()
+    ).map(([_id, count]) => ({ _id, count })),
+  };
+  console.log(id, mixedDrink);
   return saveMixedDrinkRecipeToRepository(id, mixedDrink);
+}
+
+export async function deleteMixedDrink(id: string) {
+  await deleteMixedDrinkFromRepository(id);
 }
