@@ -1,6 +1,7 @@
 import { Collection, MongoClient, ObjectId } from 'mongodb';
 import {
   BeerOrLiquorBrand,
+  BeersAndLiquorBrandsForType,
   MixedDrinkRecipe,
   MixedDrinkRecipeWithIngredients,
 } from '@dgoudie/ddm-types';
@@ -10,6 +11,11 @@ import { getLogger } from 'log4js';
 import { ServiceError } from '@dgoudie/service-error';
 import { translateMongodbException } from '../utils/translate-mongodb-exception';
 import { validateAndConvertObjectId } from '../utils/object-id';
+import {
+  buildBeerOrLiquorBrandsAggregation,
+  buildBeerOrLiquorBrandsByTypeAggregation,
+  buildMixedDrinkRecipesWithIngredientsAggregation,
+} from './aggregations';
 
 let mongoClient: MongoClient;
 let beerOrLiquorBrandsCollection: Collection<BeerOrLiquorBrand>;
@@ -41,29 +47,23 @@ export async function init() {
     );
 }
 
-export function getBeerOrLiquorBrands(
+export function getBeerOrLiquorBrands(filterText?: string) {
+  let pipeline = buildBeerOrLiquorBrandsAggregation(filterText);
+  return beerOrLiquorBrandsCollection.aggregate(pipeline).toArray();
+}
+
+export function getBeerOrLiquorBrandsByType(
   onlyShowInStock: boolean,
   onlyOutOfStock: boolean,
   filterText?: string
 ) {
-  let pipeline: object[] = [];
-  if (onlyShowInStock) {
-    pipeline = [...pipeline, { $match: { inStock: true } }];
-  }
-  if (onlyOutOfStock) {
-    pipeline = [...pipeline, { $match: { inStock: false } }];
-  }
-  if (!!filterText) {
-    pipeline = [
-      ...pipeline,
-      {
-        $match: { $expr: buildOrQueryForText(filterText, '$nameNormalized') },
-      },
-    ];
-  }
+  let pipeline = buildBeerOrLiquorBrandsByTypeAggregation(
+    onlyShowInStock,
+    onlyOutOfStock,
+    filterText
+  );
   return beerOrLiquorBrandsCollection
-    .aggregate(pipeline)
-    .sort({ nameNormalized: 1 })
+    .aggregate<BeersAndLiquorBrandsForType>(pipeline)
     .toArray();
 }
 
@@ -136,167 +136,13 @@ export function getMixedDrinkRecipesWithIngredients(
   onlyShowItemsWithAllIngedientsInStock: boolean,
   filterText?: string
 ) {
-  let pipeline: object[] = [
-    {
-      $lookup: {
-        from: properties.mongodbBeerOrLiquorBrandsCollectionName,
-        localField: 'requiredBeersOrLiquors._id',
-        foreignField: '_id',
-        as: 'requiredBeersOrLiquorsWithDetail',
-      },
-    },
-    {
-      $addFields: {
-        requiredBeersOrLiquors: {
-          $map: {
-            input: '$requiredBeersOrLiquorsWithDetail',
-            as: 'r',
-            in: {
-              _id: '$$r._id',
-              name: '$$r.name',
-              nameNormalized: '$$r.nameNormalized',
-              additionalNotes: '$$r.additionalNotes',
-              inStock: '$$r.inStock',
-              price: '$$r.price',
-              count: {
-                $arrayElemAt: [
-                  '$requiredBeersOrLiquors.count',
-                  {
-                    $indexOfArray: ['$requiredBeersOrLiquors._id', '$$r._id'],
-                  },
-                ],
-              },
-            },
-          },
-        },
-      },
-    },
-  ];
-  if (!!onlyShowItemsWithAllIngedientsInStock) {
-    pipeline = [
-      ...pipeline,
-      {
-        $match: {
-          requiredBeersOrLiquors: {
-            $not: {
-              $elemMatch: {
-                inStock: false,
-              },
-            },
-          },
-        },
-      },
-    ];
-  }
-  pipeline = [
-    ...pipeline,
-    {
-      $addFields: {
-        requiredBeersOrLiquors: {
-          $map: {
-            input: '$requiredBeersOrLiquors',
-            as: 'row',
-            in: {
-              _id: '$$row._id',
-              name: '$$row.name',
-              inStock: '$$row.inStock',
-              price: '$$row.price',
-              count: '$$row.count',
-              nameNormalized: '$$row.nameNormalized',
-              additionalNotes: '$$row.additionalNotes',
-              calculatedPrice: {
-                $multiply: ['$$row.price', '$$row.count'],
-              },
-            },
-          },
-        },
-      },
-    },
-  ];
-  if (!!filterText) {
-    pipeline = [
-      ...pipeline,
-      {
-        $addFields: {
-          requiredBeersOrLiquors: {
-            $map: {
-              input: '$requiredBeersOrLiquors',
-              as: 'row',
-              in: {
-                _id: '$$row._id',
-                name: '$$row.name',
-                inStock: '$$row.inStock',
-                price: '$$row.price',
-                count: '$$row.count',
-                nameNormalized: '$$row.nameNormalized',
-                additionalNotes: '$$row.additionalNotes',
-                calculatedPrice: '$$row.calculatedPrice',
-                nameMatch: buildOrQueryForText(
-                  filterText,
-                  '$$row.nameNormalized'
-                ),
-              },
-            },
-          },
-        },
-      },
-    ];
-  }
-  pipeline = [
-    ...pipeline,
-    {
-      $addFields: {
-        price: {
-          $divide: [
-            {
-              $round: {
-                $multiply: [
-                  { $sum: '$requiredBeersOrLiquors.calculatedPrice' },
-                  2,
-                ],
-              },
-            },
-            2,
-          ],
-        },
-      },
-    },
-  ];
-  if (!!filterText) {
-    pipeline = [
-      ...pipeline,
-      {
-        $match: {
-          $or: [
-            {
-              $expr: buildOrQueryForText(filterText, '$nameNormalized'),
-            },
-            {
-              requiredBeersOrLiquors: {
-                $elemMatch: {
-                  nameMatch: true,
-                },
-              },
-            },
-          ],
-        },
-      },
-    ];
-  }
-  pipeline = [
-    ...pipeline,
-    {
-      $unset: [
-        'requiredBeersOrLiquors.calculatedPrice',
-        'requiredBeersOrLiquors.nameMatch',
-        'requiredBeersOrLiquorsWithDetail',
-      ],
-    },
-  ];
+  let pipeline = buildMixedDrinkRecipesWithIngredientsAggregation(
+    onlyShowItemsWithAllIngedientsInStock,
+    filterText
+  );
 
   return mixedDrinkRecipesCollection
     .aggregate<MixedDrinkRecipeWithIngredients>(pipeline)
-    .sort({ nameNormalized: 1 })
     .toArray()
     .catch(translateMongodbException());
 }
@@ -334,19 +180,3 @@ export async function deleteMixedDrink(id: string) {
     .deleteOne({ _id })
     .catch(translateMongodbException());
 }
-
-const buildOrQueryForText = (
-  text: string,
-  argName: string
-): { $or: { $function: any }[] } => {
-  const tokenizedText = text.toLowerCase().replace(/\//g, '\\').split(' ');
-  return {
-    $or: tokenizedText.map<{ $function: any }>((token) => ({
-      $function: {
-        body: `function(text) { return text.includes("${token}")}`,
-        args: [argName],
-        lang: 'js',
-      },
-    })),
-  };
-};

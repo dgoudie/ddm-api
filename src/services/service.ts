@@ -7,6 +7,7 @@ import {
   deleteBeerOrLiquor as deleteBeerOrLiquorFromRepository,
   deleteMixedDrink as deleteMixedDrinkFromRepository,
   getBeerOrLiquorBrand as getBeerOrLiquorBrandFromRepository,
+  getBeerOrLiquorBrandsByType as getBeerOrLiquorBrandsByTypeFromRepository,
   getBeerOrLiquorBrands as getBeerOrLiquorBrandsFromRepository,
   getMixedDrinkRecipe as getMixedDrinkRecipeFromRepository,
   getMixedDrinkRecipesWithIngredients as getMixedDrinkRecipesWithIngredientsFromRepository,
@@ -18,13 +19,20 @@ import {
 import { ObjectId } from 'bson';
 import { validateAndConvertObjectId } from '../utils/object-id';
 
-export async function getBeerOrLiquorBrands(
+export async function getBeerOrLiquorBrands(filterText?: string) {
+  try {
+    return getBeerOrLiquorBrandsFromRepository(filterText);
+  } catch (e) {
+    throw new Error('Unable to query database.');
+  }
+}
+export async function getBeerOrLiquorBrandsByType(
   onlyShowInStock = false,
   onlyOutOfStock = false,
   filterText?: string
 ) {
   try {
-    return getBeerOrLiquorBrandsFromRepository(
+    return getBeerOrLiquorBrandsByTypeFromRepository(
       onlyShowInStock,
       onlyOutOfStock,
       filterText

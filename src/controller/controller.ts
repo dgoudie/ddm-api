@@ -3,6 +3,7 @@ import {
   deleteMixedDrink,
   getBeerOrLiquorBrand,
   getBeerOrLiquorBrands,
+  getBeerOrLiquorBrandsByType,
   getMixedDrinkRecipe,
   getMixedDrinkRecipesWithIngredients,
   markBeerOrLiquorAsInStock,
@@ -13,13 +14,16 @@ import {
 import express from 'express';
 import { parseAndConvertAllParams } from '../utils/parse-query-param';
 import { ServiceError } from '@dgoudie/service-error';
-import {
-  broadcastToWebsocketClients,
-  broadcastUpdateToWebsocketClients,
-} from './ws';
+import { broadcastUpdateToWebsocketClients } from './ws';
 
 export function init(app: express.Application) {
   app.get('/api/beers-and-liquors', (req, res, next) => {
+    const filter = req.query.filter as string;
+    getBeerOrLiquorBrands(filter)
+      .then((items) => res.send(items))
+      .catch((e) => next(e));
+  });
+  app.get('/api/beers-and-liquors-by-type', (req, res, next) => {
     const { onlyInStock, onlyOutOfStock } = <
       {
         onlyInStock: boolean | undefined;
@@ -45,7 +49,7 @@ export function init(app: express.Application) {
         )
       );
     } else {
-      getBeerOrLiquorBrands(onlyInStock, onlyOutOfStock, filter)
+      getBeerOrLiquorBrandsByType(onlyInStock, onlyOutOfStock, filter)
         .then((items) => res.send(items))
         .catch((e) => next(e));
     }
@@ -86,6 +90,7 @@ export function init(app: express.Application) {
         .then(() => res.sendStatus(204))
         .then(() => {
           broadcastUpdateToWebsocketClients(`/beers-and-liquors`);
+          broadcastUpdateToWebsocketClients(`/beers-and-liquors-by-type`);
           broadcastUpdateToWebsocketClients(`/mixed-drinks`);
         })
         .catch(next);
@@ -101,6 +106,7 @@ export function init(app: express.Application) {
       .then((id) => res.status(200).send(id))
       .then(() => {
         broadcastUpdateToWebsocketClients(`/beers-and-liquors`);
+        broadcastUpdateToWebsocketClients(`/beers-and-liquors-by-type`);
         broadcastUpdateToWebsocketClients(`/mixed-drinks`);
       })
       .catch(next);
@@ -116,6 +122,7 @@ export function init(app: express.Application) {
       .then(() => res.sendStatus(204))
       .then(() => {
         broadcastUpdateToWebsocketClients(`/beers-and-liquors`);
+        broadcastUpdateToWebsocketClients(`/beers-and-liquors-by-type`);
         broadcastUpdateToWebsocketClients(`/mixed-drinks`);
       })
       .catch(next);
