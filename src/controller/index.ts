@@ -60,7 +60,12 @@ function setupPreRequestMiddleware(app: express.Application) {
   app.use(cookieParser());
   app.use(express.json());
   app.use((req, res, next) => {
-    getLogger().info(`Received request to ${decodeURIComponent(req.url)}`);
+    const logger = getLogger();
+    logger.addContext('http_client_ip_address', req.ip);
+    Object.entries(req.headers).forEach(([key, value]) =>
+      logger.addContext(`http_request_header_${key}`, value)
+    );
+    logger.info(`Received request to ${decodeURIComponent(req.url)}`);
     next();
   });
   app.use('*/secure*', (req, res, next) => {
@@ -99,7 +104,7 @@ function setupHealthCheck(app: express.Application) {
     };
     try {
       res.send(healthcheck);
-    } catch (e) {
+    } catch (e: any) {
       healthcheck.message = e;
       res.status(503).send(healthcheck);
     }
